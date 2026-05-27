@@ -1,27 +1,74 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working in this repository.
 
 ## 项目简介
 
 微信小程序小游戏，回合制对战 + 角色养成的单机游戏。
-美术为极简字符风格。
+美术为极简字符风格，中式古风奇幻世界观。
+练习项目，不以赚钱为首要目的。
 
 **当前状态**：设计阶段，尚未开始编码。
 
-## 设计摘要
+## 项目结构
 
-详见 `docs/2026-05-27-fantasy-turnbased-game-design.md`
+```
+├── .claude/agents/      自定义 agent（战斗/数值/系统/评审）
+├── docs/                设计文档
+│   ├── combat/          战斗系统设计
+│   ├── system/          系统功能/UI 设计
+│   └── narrative/       世界观/剧情（预留）
+├── src/                 源码（编码后创建）
+├── assets/              资源文件
+├── task_plan.md         总体规划
+├── findings.md          设计决策记录
+├── progress.md          进度日志
+```
+
+## 设计文档
+
+详见 `docs/` 目录。文档顶部有状态标记：
+- `draft` — 初稿
+- `reviewing` — 评审中
+- `approved` — 已定稿
+
+### 已定稿设计
+| 文档 | 内容 |
+|------|------|
+| `docs/combat/2026-05-28-turn-order-and-round-flow-design.md` | 回合流程与出手顺序 |
+| `docs/combat/2026-05-28-damage-formula-design.md` | 伤害公式与职业数值 |
+| `docs/system/2026-05-28-main-interface-and-game-flow-design.md` | 主界面布局与游戏流程 |
 
 ### 已定设计
-- **世界观**：中世纪奇幻 + 中国古风审美
 - **战斗**：小队回合制（我方3人 vs 敌方1-6+），按速度轮流出手，仇恨系统替代站位
 - **职业**：玄甲（坦）、方士（法）、惊鸿（弓）、素问（奶）
 - **角色**：有具体角色名（中国古风），固定星级（四/五星），招募获得
+- **游戏名**：待定（预留给文案策划）
 
 ### 待定事项
 - 技能系统：各职业具体技能
 - 养成维度：等级、装备、技能升级等
-- 游戏主循环（关卡地图/副本列表/走格子）
 - 技术选型（微信小程序前端框架）
 - 剧情/世界观具体设定
+
+## 工作流
+
+### 设计流程
+```
+agent 出方案 → 评审 agent 审查 → 修问题 → 定稿(approved)
+```
+
+### 已创建的 agent（.claude/agents/）
+| agent | 职责 | 颜色 |
+|-------|------|------|
+| combat-designer | 战斗/技能/Buff/仇恨/AI 设计 | red |
+| balance-designer | 伤害公式/成长曲线/概率/经济 | green |
+| system-designer | UI/导航/编队/背包/存档/系统流程 | cyan |
+| game-design-reviewer | 方案评审/问题排查/对比分析 | yellow |
+
+### Agent 创建规则
+创建新 agent 必须先调用 agent-develop 技能获取规范参考，不得手动凭记忆创建。
+
+### 基础设施
+- 版本管理：git + GitHub（asdnmy123/this-is-a-game-project）
+- 项目跟踪：planning-with-files 技能（task_plan.md / findings.md / progress.md）
