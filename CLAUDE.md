@@ -77,6 +77,25 @@ agent 出方案 → 评审 agent 审查 → 修问题 → 定稿(approved)
 - 版本管理：git + GitHub（asdnmy123/this-is-a-game-project）
 - 项目跟踪：planning-with-files 技能（task_plan.md / findings.md / progress.md）
 
+## Git 提交与推送规则
+
+以下情况**自动提交并推送**（不需要用户提醒）：
+
+| 触发条件 | 内容 |
+|---------|------|
+| 设计方案通过评审，状态改为 approved | 提交设计文档 + 相关变更 |
+| 新建/修改 agent 配置文件 | 提交 agent + 更新 CLAUDE.md |
+| 阶段推进（pending → complete） | 提交 task_plan.md 等规划文件 |
+| 重要的规划文件更新 | 提交 findings.md / progress.md 等 |
+| 项目配置文件变更 | 提交 CLAUDE.md / .gitignore 等 |
+
+**不提交的情况：**
+- 每次 Read 文件不提交
+- 正在进行的草稿不提交（但会 stage 住）
+- 临时测试文件不提交
+
+**原则**：每次提交是一个**逻辑完整的变更**，颗粒度大致相当于"做完一件事"。不做每改一行就提交的碎提交，也不做攒了一周才推的大提交。
+
 ## 文档维护规则（硬性要求）
 
 每次操作后，对照下表检查需要更新哪些文件：
