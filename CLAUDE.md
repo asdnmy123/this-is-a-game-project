@@ -69,6 +69,7 @@ agent 出方案 → 评审 agent 审查 → 修问题 → 定稿(approved)
 | balance-designer | 伤害公式/成长曲线/概率/经济 | green |
 | system-designer | UI/导航/编队/背包/存档/系统流程 | cyan |
 | game-design-reviewer | 方案评审/问题排查/对比分析 | yellow |
+| narrative-designer | 世界观/剧情/角色故事/命名/文案 | magenta |
 
 ### Agent 创建规则
 创建新 agent 必须先调用 agent-develop 技能获取规范参考，不得手动凭记忆创建。
