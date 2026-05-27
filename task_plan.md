@@ -10,8 +10,8 @@
 
 ### 阶段 0：基础设施搭建
 - [x] Git 初始化（版本管理）
-- [ ] 项目目录结构规范
-- [ ] 文档定稿标记机制（draft → reviewing → approved）
+- [x] 项目目录结构规范
+- [x] 文档定稿标记机制（draft → reviewing → approved）
 - [ ] 技术选型（微信小程序框架）
 - **状态：** in_progress
 
