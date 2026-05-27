@@ -72,3 +72,18 @@ agent 出方案 → 评审 agent 审查 → 修问题 → 定稿(approved)
 ### 基础设施
 - 版本管理：git + GitHub（asdnmy123/this-is-a-game-project）
 - 项目跟踪：planning-with-files 技能（task_plan.md / findings.md / progress.md）
+
+## 文档维护规则（硬性要求）
+
+每次操作后，对照下表检查需要更新哪些文件：
+
+| 触发条件 | 要更新的文件 | 更新内容 |
+|---------|------------|---------|
+| 创建/修改了 agent 文件 | `CLAUDE.md` | agent 清单表格 |
+| 设计方案通过评审，状态变成 approved | `CLAUDE.md` | 已定稿设计列表 |
+| 阶段推进/勾选框变动 | `task_plan.md` | 状态标记和阶段进度 |
+| 做了重要决策或发现 | `findings.md` | 新增决策/发现/待办提醒 |
+| 完成了任何实质性操作 | `progress.md` | 记录做了什么 |
+| 文档路径/结构变了 | `CLAUDE.md` | 项目结构说明 |
+
+**原则**：不需要每次 Read 文件都记 progress，但任何"产出性操作"（写文档、改设计、建文件、提交代码）之后都必须更新。
