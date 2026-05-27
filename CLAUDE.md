@@ -48,8 +48,12 @@ This file provides guidance to Claude Code when working in this repository.
 ### 待定事项
 - 技能系统：各职业具体技能
 - 养成维度：等级、装备、技能升级等
-- 技术选型（微信小程序前端框架）
 - 剧情/世界观具体设定
+
+### 已定技术选型
+- **前端框架**：微信小程序原生框架
+- **版本管理**：git + GitHub（asdnmy123/this-is-a-game-project）
+- **项目跟踪**：planning-with-files 技能
 
 ## 工作流
 
