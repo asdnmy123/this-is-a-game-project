@@ -60,13 +60,8 @@ This file provides guidance to Claude Code when working in this repository.
 
 ### 设计流程
 ```
-agent 出方案 → 保存到 docs/ 下 → 评审 agent 读文件审查 → 修问题 → 定稿(approved)
+agent 出方案（存文件）→ 评审 agent 读文件审查 → 修问题 → 定稿(approved)
 ```
-
-**关键规则**：agent 产出的方案必须先保存到 `docs/` 下的文件，才能交给下一个环节。
-- 不允许通过聊天记录/对话历史传递方案
-- 评审 agent 只能读文件审，不去翻对话
-- 草稿版本可以先存，标 `draft` 就行，后面随便改
 
 ### 已创建的 agent（.claude/agents/）
 | agent | 职责 | 颜色 |
