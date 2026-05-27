@@ -5,7 +5,7 @@ This file provides guidance to Claude Code when working in this repository.
 ## 项目简介
 
 微信小程序小游戏，回合制对战 + 角色养成的单机游戏。
-美术为极简字符风格，中式古风奇幻世界观。
+美术为极简字符风格，中式古风奇幻世界观（大晟王朝/江湖+方术）。
 练习项目，不以赚钱为首要目的。
 
 **当前状态**：设计阶段，尚未开始编码。
@@ -38,17 +38,18 @@ This file provides guidance to Claude Code when working in this repository.
 | `docs/combat/2026-05-28-turn-order-and-round-flow-design.md` | 回合流程与出手顺序 |
 | `docs/combat/2026-05-28-damage-formula-design.md` | 伤害公式与职业数值 |
 | `docs/system/2026-05-28-main-interface-and-game-flow-design.md` | 主界面布局与游戏流程 |
+| `docs/narrative/2026-05-28-world-setting-and-game-name.md` | 世界观与游戏命名 |
 
 ### 已定设计
+- **游戏名**：《八方游侠》
+- **世界观**：大晟王朝，玩家扮演游侠阁阁主，招募各路游侠平定乱世
 - **战斗**：小队回合制（我方3人 vs 敌方1-6+），按速度轮流出手，仇恨系统替代站位
 - **职业**：玄甲（坦）、方士（法）、惊鸿（弓）、素问（奶）
 - **角色**：有具体角色名（中国古风），固定星级（四/五星），招募获得
-- **游戏名**：待定（预留给文案策划）
 
 ### 待定事项
 - 技能系统：各职业具体技能
 - 养成维度：等级、装备、技能升级等
-- 剧情/世界观具体设定
 
 ### 已定技术选型
 - **前端框架**：微信小程序原生框架
