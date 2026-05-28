@@ -153,6 +153,19 @@
 - [x] 搭建 Cocos Creator 项目脚手架（client/）
 - [x] 编写战斗原型代码：Config/BattleUnit/DamageFormula/TurnOrder/BattleManager/BattleScene
 
+### 本会话操作（2026-05-28）
+- [x] 作为 ui-designer 评审战斗原型 UI `client/assets/Scripts/BattleScene.ts`
+- [x] 输出评审报告 `docs/reviews/prototype-ui-review.md`
+- [x] 发现 3 个 Blocker（单位重叠/敌人无点击信号/无伤害数字反馈）、7 个 Important 问题、6 个 Suggestion
+- [x] 定义古风配色体系（背景墨黑/卡片深赭/宣纸白文字/朱砂红敌人/翠竹绿HP）
+- [x] 确定布局方案：玩家底部、敌人顶部、日志左下角
+
+### 本会话操作（2026-05-28）
+- [x] 作为 cocos-dev 审查战斗原型 Cocos Creator 3.x API 正确性
+- [x] 输出审查报告 `docs/reviews/prototype-code-review-cocos.md`
+- [x] 发现 1 个 🔴 Error（Node.setContentSize 在 3.x 中不存在）、4 个 🟡 Warning、5 个 💡 Suggestion
+- [x] 架构上保持良好：BattleManager 与 BattleScene 的逻渲分离、纯逻辑类零 Cocos 依赖、Config 驱动配置
+
 ### 测试结果
 | 测试 | 预期 | 实际 | 状态 |
 |------|------|------|------|
