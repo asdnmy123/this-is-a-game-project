@@ -1,5 +1,7 @@
 import { CharConfig } from './Config';
 
+let _unitIdCounter = 0;
+
 /** 战斗中的角色状态 */
 export class BattleUnit {
   id: string;
@@ -22,7 +24,7 @@ export class BattleUnit {
 
   constructor(config: CharConfig, isPlayer: boolean, teamIndex: number) {
     this.config = config;
-    this.id = config.id;
+    this.id = `${config.id}_${_unitIdCounter++}`;
     this.name = config.name;
     this.classType = config.classType;
     this.isPlayer = isPlayer;

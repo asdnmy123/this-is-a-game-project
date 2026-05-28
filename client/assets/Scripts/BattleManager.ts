@@ -25,6 +25,8 @@ export class BattleManager {
   round: number = 0;
   phase: BattlePhase = 'round_start';
 
+  /** 当前正在行动的角色（用于 UI 行动指示） */
+  currentActingUnit: BattleUnit | null = null;
   /** 当前需要玩家选择目标 */
   pendingActionUnit: BattleUnit | null = null;
   /** 当前可以攻击的目标列表 */
@@ -53,6 +55,7 @@ export class BattleManager {
   /** 开始新的一轮 */
   startNewRound(): void {
     this.round++;
+    this.currentActingUnit = null;
     this.addLog(`\n--- 第 ${this.round} 轮 ---`);
     this.turnOrder = buildTurnOrder(this.allUnits);
     this.currentTurnIndex = 0;
@@ -80,6 +83,7 @@ export class BattleManager {
     }
 
     const current = this.turnOrder[this.currentTurnIndex];
+    this.currentActingUnit = current;
     this.addLog(`${current.name} 的回合`);
 
     if (current.isPlayer) {
@@ -159,12 +163,14 @@ export class BattleManager {
 
     if (aliveEnemies === 0) {
       this.phase = 'victory';
+      this.currentActingUnit = null;
       this.addLog('\n======== 战斗胜利！========');
       this.onUpdate?.();
       return true;
     }
     if (alivePlayers === 0) {
       this.phase = 'defeat';
+      this.currentActingUnit = null;
       this.addLog('\n======== 战斗失败 ========');
       this.onUpdate?.();
       return true;

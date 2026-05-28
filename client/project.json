@@ -1,7 +1,6 @@
 {
   "name": "八方游侠",
   "version": "0.1.0",
-  "engine": "cocos-creator",
   "engineVersion": "3.8.0",
   "bundleName": "main",
   "packages": {
@@ -11,7 +10,6 @@
       }
     }
   },
-  "pluginModules": [],
   "renderMode": 0,
   "useBuiltinShader": true,
   "startScene": "db://assets/Scene/Battle.fire"
