@@ -1,407 +1,346 @@
-import { _decorator, Component, Node, Label, Color, UITransform, Vec3, tween, Tween, Graphics } from 'cc';
+import { _decorator, Component, Node, Label, Color, UITransform, Vec3, tween, Tween, Graphics, Canvas } from 'cc';
 import { BattleManager, BattleAction } from './BattleManager';
 import { BattleUnit } from './BattleUnit';
 import { CHARS, ENEMIES } from './Config';
-const { ccclass, property } = _decorator;
-
-/**
- * Changelog (2026-05-28): Fixes from prototype code + UI review
- * - [E1] setContentSize -> UITransform for click hitbox
- * - [W1] Removed empty Sprite from enemy click area, use touch events
- * - [W2] setTimeout -> tween for flash feedback
- * - [S1] Removed unused imports (instantiate, Prefab, find, Button, Sprite)
- * - [B1] Horizontal layout for player/enemy units
- * - [B2] Enemy click area visual indicator (semi-transparent bg + border)
- * - [B3] Damage/heal floating number popups (tween + destroy)
- * - [I1] 古风 color palette applied throughout
- * - [I2] Battle log semi-transparent background
- * - [I3] Victory/defeat: 古风 Chinese text ("凯旋" / "全军覆没"), no emoji
- * - [I5] HP bar with Graphics, color thresholds (绿 > 50%, 金 30-50%, 红 <= 30%)
- * - [I6] Current turn indicator (pulsing bar via tween .repeatForever)
- */
+const { ccclass } = _decorator;
 
 /** 古风配色 */
-const COLORS = {
-  playerText: new Color(0xE8, 0xD5, 0xB7),  // 宣纸白
-  enemyText: new Color(0xC8, 0x4C, 0x4C),   // 朱砂红
-  hpGreen: new Color(0x6B, 0xAF, 0x6B),     // 翠竹绿
-  hpAmber: new Color(0xD4, 0xA7, 0x6A),     // 琥珀金
-  hpDanger: new Color(0xC8, 0x4C, 0x4C),    // 朱砂红
-  logText: new Color(0x8B, 0x7D, 0x6B),     // 灰褐
-  classColors: {
-    xuanjia: new Color(0x8B, 0x45, 0x13),   // 铁锈棕
-    fangshi: new Color(0x4A, 0x6F, 0xA5),   // 青黛蓝
-    jinghong: new Color(0xB8, 0x86, 0x0B),  // 古铜金
-    suwen: new Color(0x6B, 0x8E, 0x6B),     // 苍绿
-  },
+const C = {
+  bg: new Color(0x1A, 0x14, 0x10),
+  cardBg: new Color(0x2A, 0x1F, 0x1A, 204),
+  playerText: new Color(0xE8, 0xD5, 0xB7),
+  enemyText: new Color(0xC8, 0x4C, 0x4C),
+  hpGreen: new Color(0x6B, 0xAF, 0x6B),
+  hpAmber: new Color(0xD4, 0xA7, 0x6A),
+  hpRed: new Color(0xC8, 0x4C, 0x4C),
+  logText: new Color(0x8B, 0x7D, 0x6B),
+  damageText: new Color(0xFF, 0x44, 0x44),
+  healText: new Color(0x90, 0xEE, 0x90),
+  xuanjia: new Color(0x8B, 0x45, 0x13),
+  fangshi: new Color(0x4A, 0x6F, 0xA5),
+  jinghong: new Color(0xB8, 0x86, 0x0B),
+  suwen: new Color(0x6B, 0x8E, 0x6B),
+  victory: new Color(0xD4, 0xA7, 0x6A),
+  defeat: new Color(0x8B, 0x00, 0x00),
+  hpBarBg: new Color(0x3A, 0x2A, 0x1A),
+  enemyBg: new Color(0x3C, 0x2A, 0x1E, 100),
+  enemyBorder: new Color(0x8B, 0x73, 0x55, 80),
 };
 
-/** 字符风格的人物展示 */
 const CLASS_ICONS: Record<string, string> = {
-  xuanjia: '【甲】',
-  fangshi: '【法】',
-  jinghong: '【弓】',
-  suwen: '【医】',
+  xuanjia: '【甲】', fangshi: '【法】',
+  jinghong: '【弓】', suwen: '【医】',
 };
 
 interface UnitNodeData {
-  root: Node;
-  iconLabel: Label;
-  nameLabel: Label;
-  hpFill: Graphics;
-  hpLabel: Label;
+  root: Node; iconLabel: Label; nameLabel: Label;
+  hpFill: Graphics; hpLabel: Label;
 }
+
+const WIN_SIZE = { w: 720, h: 1280 };
 
 @ccclass('BattleScene')
 export class BattleScene extends Component {
-  @property({ type: Node })
-  playerArea: Node | null = null;
-
-  @property({ type: Node })
-  enemyArea: Node | null = null;
-
-  @property({ type: Node })
-  logArea: Node | null = null;
-
-  @property({ type: Node })
-  actionPanel: Node | null = null;
-
-  @property({ type: Label })
-  statusLabel: Label | null = null;
-
-  @property({ type: Label })
-  roundLabel: Label | null = null;
-
-  battleMgr: BattleManager = null!;
-  unitNodes: Map<string, UnitNodeData> = new Map();
-  private _logBgSetup = false;
+  private battleMgr!: BattleManager;
+  private unitNodes = new Map<string, UnitNodeData>();
+  private playerArea!: Node;
+  private enemyArea!: Node;
+  private logLabel!: Label;
+  private statusLabel!: Label;
+  private roundLabel!: Label;
 
   start() {
+    this.buildUI();
     this.initBattle();
-    this.setupLogArea();
   }
 
-  private setupLogArea() {
-    if (!this.logArea || this._logBgSetup) return;
-    this._logBgSetup = true;
+  /** 全自动搭建 UI —— 不需要编辑器拖节点 */
+  private buildUI() {
+    // Canvas
+    let canvas = this.getComponent(Canvas);
+    if (!canvas) canvas = this.addComponent(Canvas);
 
-    const bg = new Node('logBg');
-    const gfx = bg.addComponent(Graphics);
-    gfx.fillColor = new Color(0x2A, 0x1F, 0x1A, 204);
-    gfx.rect(-110, -100, 220, 200);
-    gfx.fill();
-    bg.setPosition(0, 0);
-    this.logArea.addChild(bg, 0);
+    // 背景色
+    const bg = new Node('bg');
+    const bgGfx = bg.addComponent(Graphics);
+    bgGfx.fillColor = C.bg;
+    bgGfx.rect(-WIN_SIZE.w / 2, -WIN_SIZE.h / 2, WIN_SIZE.w, WIN_SIZE.h);
+    bgGfx.fill();
+    this.node.addChild(bg);
 
-    const logLabel = this.logArea.getComponent(Label);
-    if (logLabel) {
-      logLabel.fontSize = 14;
-      logLabel.color = COLORS.logText;
-      logLabel.lineHeight = 20;
-    }
+    // 标题
+    const titleNode = new Node('title');
+    const titleLbl = titleNode.addComponent(Label);
+    titleLbl.string = '八 方 游 侠';
+    titleLbl.fontSize = 28;
+    titleLbl.color = C.playerText;
+    titleLbl.lineHeight = 36;
+    titleNode.setPosition(0, 560);
+    this.node.addChild(titleNode);
+
+    // 轮数
+    const roundNode = new Node('roundLabel');
+    this.roundLabel = roundNode.addComponent(Label);
+    this.roundLabel.fontSize = 18;
+    this.roundLabel.color = C.hpAmber;
+    roundNode.setPosition(0, 520);
+    this.node.addChild(roundNode);
+
+    // 敌人区域（顶部）
+    this.enemyArea = new Node('enemyArea');
+    this.enemyArea.setPosition(0, 400);
+    this.node.addChild(this.enemyArea);
+
+    // 状态文字
+    const statusNode = new Node('statusLabel');
+    this.statusLabel = statusNode.addComponent(Label);
+    this.statusLabel.fontSize = 20;
+    this.statusLabel.color = C.playerText;
+    this.statusLabel.lineHeight = 30;
+    statusNode.setPosition(0, 280);
+    this.node.addChild(statusNode);
+
+    // 分隔线
+    const line = new Node('divider');
+    const lineGfx = line.addComponent(Graphics);
+    lineGfx.fillColor = new Color(0x8B, 0x73, 0x55, 100);
+    lineGfx.rect(-200, 0, 400, 1);
+    lineGfx.fill();
+    line.setPosition(0, 230);
+    this.node.addChild(line);
+
+    // 玩家区域（底部）
+    this.playerArea = new Node('playerArea');
+    this.playerArea.setPosition(0, 100);
+    this.node.addChild(this.playerArea);
+
+    // 日志区域（左下角）
+    const logNode = new Node('logArea');
+    this.logLabel = logNode.addComponent(Label);
+    this.logLabel.fontSize = 13;
+    this.logLabel.color = C.logText;
+    this.logLabel.lineHeight = 18;
+    this.logLabel.horizontalAlign = Label.HorizontalAlign.LEFT;
+    this.logLabel.verticalAlign = Label.VerticalAlign.BOTTOM;
+    logNode.setPosition(-340, -580);
+
+    const logBg = new Node('logBg');
+    const logBgGfx = logBg.addComponent(Graphics);
+    logBgGfx.fillColor = C.cardBg;
+    logBgGfx.rect(-10, -10, 230, 220);
+    logBgGfx.fill();
+    logBg.setPosition(0, 0);
+    logNode.addChild(logBg);
+
+    const uiTransform = logNode.getComponent(UITransform)!;
+    uiTransform.setContentSize(220, 220);
+    this.node.addChild(logNode);
+
+    // 操作提示（底部中央）
+    const hint = new Node('hint');
+    const hintLbl = hint.addComponent(Label);
+    hintLbl.string = '点击敌人选择攻击目标';
+    hintLbl.fontSize = 14;
+    hintLbl.color = new Color(0x8B, 0x7D, 0x6B, 150);
+    hint.setPosition(0, -560);
+    this.node.addChild(hint);
   }
 
-  initBattle() {
-    // 创建角色
-    const player1 = new BattleUnit(CHARS.xuanjia, true, 0);
-    const player2 = new BattleUnit(CHARS.fangshi, true, 1);
-    const player3 = new BattleUnit(CHARS.jinghong, true, 2);
+  private initBattle() {
+    const p1 = new BattleUnit(CHARS.xuanjia, true, 0);
+    const p2 = new BattleUnit(CHARS.fangshi, true, 1);
+    const p3 = new BattleUnit(CHARS.jinghong, true, 2);
+    const e1 = new BattleUnit(ENEMIES.bandit, false, 0);
+    const e2 = new BattleUnit(ENEMIES.bandit, false, 1);
+    const e3 = new BattleUnit(ENEMIES.bandit_leader, false, 2);
 
-    const enemy1 = new BattleUnit(ENEMIES.bandit, false, 0);
-    const enemy2 = new BattleUnit(ENEMIES.bandit, false, 1);
-    const enemy3 = new BattleUnit(ENEMIES.bandit_leader, false, 2);
-
-    this.battleMgr = new BattleManager([player1, player2, player3], [enemy1, enemy2, enemy3]);
-
-    // 渲染初始状态
-    this.renderUnits();
-
-    // 回调绑定
+    this.battleMgr = new BattleManager([p1, p2, p3], [e1, e2, e3]);
     this.battleMgr.onUpdate = () => this.onBattleUpdate();
-    this.battleMgr.onAction = (action) => this.onBattleAction(action);
-
-    // 开始战斗
+    this.battleMgr.onAction = (a) => this.onBattleAction(a);
+    this.renderUnits();
     this.battleMgr.start();
     this.updateUI();
   }
 
-  renderUnits() {
-    this.playerArea?.removeAllChildren();
-    this.enemyArea?.removeAllChildren();
+  private renderUnits() {
+    this.playerArea.removeAllChildren();
+    this.enemyArea.removeAllChildren();
     this.unitNodes.clear();
 
-    const renderGroup = (units: BattleUnit[], parent: Node | null) => {
-      const count = units.length;
-      const spacing = 130;
-      const startX = -((count - 1) * spacing) / 2;
-      units.forEach((unit, i) => {
-        const node = this.createUnitNode(unit);
-        node.setPosition(startX + i * spacing, 0);
-        parent?.addChild(node);
+    const render = (units: BattleUnit[], parent: Node) => {
+      const spacing = 140;
+      const startX = -((units.length - 1) * spacing) / 2;
+      units.forEach((u, i) => {
+        const n = this.createUnitNode(u);
+        n.setPosition(startX + i * spacing, 0);
+        parent.addChild(n);
       });
     };
 
-    renderGroup(this.battleMgr.players, this.playerArea);
-    renderGroup(this.battleMgr.enemies, this.enemyArea);
+    render(this.battleMgr.players, this.playerArea);
+    render(this.battleMgr.enemies, this.enemyArea);
   }
 
-  createUnitNode(unit: BattleUnit): Node {
+  private createUnitNode(unit: BattleUnit): Node {
     const node = new Node(unit.name);
 
-    // 敌人：半透明背景 + 边框（点击视觉指示）
+    // 敌人背景
     if (!unit.isPlayer) {
-      const bgNode = new Node('enemyBg');
-      const bgGfx = bgNode.addComponent(Graphics);
-      bgGfx.fillColor = new Color(0x3C, 0x2A, 0x1E, 100);
-      bgGfx.rect(-55, -50, 110, 100);
-      bgGfx.fill();
-      bgNode.setPosition(0, 0);
-      node.addChild(bgNode);
-
-      const borderNode = new Node('enemyBorder');
-      const borderGfx = borderNode.addComponent(Graphics);
-      borderGfx.fillColor = new Color(0x8B, 0x73, 0x55, 80);
-      borderGfx.rect(-57, -52, 114, 104);
-      borderGfx.fill();
-      borderNode.setPosition(0, 0);
-      node.addChild(borderNode);
+      const bg = nd('enemyBg');
+      const g = bg.addComponent(Graphics);
+      g.fillColor = C.enemyBg; g.rect(-55, -45, 110, 95); g.fill();
+      node.addChild(bg);
+      const br = nd('enemyBorder');
+      const g2 = br.addComponent(Graphics);
+      g2.fillColor = C.enemyBorder; g2.rect(-57, -47, 114, 99); g2.fill();
+      node.addChild(br);
     }
 
-    // 图标
-    const iconNode = new Node('icon');
-    const iconLabel = iconNode.addComponent(Label);
-    iconLabel.string = CLASS_ICONS[unit.classType] || '【?】';
-    iconLabel.fontSize = 36;
-    iconNode.setPosition(0, 30);
-    const classColor = COLORS.classColors[unit.classType as keyof typeof COLORS.classColors] || COLORS.playerText;
-    iconLabel.color = unit.isPlayer ? classColor : COLORS.enemyText;
+    // 职业图标
+    const icon = nd('icon');
+    const il = icon.addComponent(Label);
+    il.string = CLASS_ICONS[unit.classType] || '【?】';
+    il.fontSize = 36;
+    icon.setPosition(0, 30);
+    const cc = (C as any)[unit.classType];
+    il.color = unit.isPlayer ? (cc || C.playerText) : C.enemyText;
 
     // 名字
-    const nameNode = new Node('name');
-    const nameLabel = nameNode.addComponent(Label);
-    nameLabel.string = unit.name;
-    nameLabel.fontSize = 18;
-    nameLabel.color = unit.isPlayer ? COLORS.playerText : COLORS.enemyText;
-    nameNode.setPosition(0, 0);
+    const name = nd('name');
+    const nl = name.addComponent(Label);
+    nl.string = unit.name;
+    nl.fontSize = 16;
+    nl.color = unit.isPlayer ? C.playerText : C.enemyText;
 
     // HP 文字
-    const hpLabelNode = new Node('hpLabel');
-    const hpLabel = hpLabelNode.addComponent(Label);
-    hpLabel.string = unit.hpText;
-    hpLabel.fontSize = 14;
-    hpLabel.color = COLORS.hpGreen;
-    hpLabelNode.setPosition(0, -22);
+    const hpL = nd('hpLabel');
+    const hl = hpL.addComponent(Label);
+    hl.fontSize = 13;
+    hl.color = C.hpGreen;
+    hl.string = unit.hpText;
+    hpL.setPosition(0, -20);
 
     // HP 条背景
-    const hpBgNode = new Node('hpBg');
-    const hpBgGfx = hpBgNode.addComponent(Graphics);
-    hpBgGfx.fillColor = new Color(0x3A, 0x2A, 0x1A);
-    hpBgGfx.rect(-45, -3, 90, 6);
-    hpBgGfx.fill();
-    hpBgNode.setPosition(0, -33);
+    const hpBg = nd('hpBg');
+    const hb = hpBg.addComponent(Graphics);
+    hb.fillColor = C.hpBarBg;
+    hb.rect(-42, -3, 84, 5); hb.fill();
+    hpBg.setPosition(0, -32);
 
     // HP 条填充
-    const hpFillNode = new Node('hpFill');
-    const hpFillGfx = hpFillNode.addComponent(Graphics);
-    hpFillGfx.fillColor = COLORS.hpGreen;
-    hpFillGfx.rect(-45, -3, 90, 6);
-    hpFillGfx.fill();
-    hpFillNode.setPosition(0, -33);
+    const hpFill = nd('hpFill');
+    const hf = hpFill.addComponent(Graphics);
+    hf.fillColor = C.hpGreen;
+    hf.rect(-42, -3, 84, 5); hf.fill();
+    hpFill.setPosition(0, -32);
 
-    node.addChild(iconNode);
-    node.addChild(nameNode);
-    node.addChild(hpLabelNode);
-    node.addChild(hpBgNode);
-    node.addChild(hpFillNode);
+    node.addChild(icon); node.addChild(name);
+    node.addChild(hpL); node.addChild(hpBg); node.addChild(hpFill);
 
-    // 敌人可点击区域（纯 UITransform + 触摸事件）
+    // 敌人点击
     if (!unit.isPlayer) {
-      const clickNode = new Node('click');
-      clickNode.setPosition(0, 0);
-      const uiTransform = clickNode.getComponent(UITransform)!;
-      uiTransform.setContentSize(120, 100);
-      clickNode.on(Node.EventType.TOUCH_END, () => {
-        this.onEnemyClicked(unit);
+      const click = nd('click');
+      const ut = click.addComponent(UITransform);
+      ut.setContentSize(120, 100);
+      click.on(Node.EventType.TOUCH_END, () => {
+        if (this.battleMgr.pendingActionUnit && unit.isAlive) {
+          this.battleMgr.playerAttack(unit.id);
+        }
       });
-      node.addChild(clickNode);
+      node.addChild(click);
     }
 
-    this.unitNodes.set(unit.id, { root: node, iconLabel, nameLabel, hpFill: hpFillGfx, hpLabel });
+    this.unitNodes.set(unit.id, { root: node, iconLabel: il, nameLabel: nl, hpFill: hf, hpLabel: hl });
     return node;
+
+    function nd(name: string) { const n = new Node(name); return n; }
   }
 
-  /** 点击敌人 - 选择攻击目标 */
-  onEnemyClicked(unit: BattleUnit) {
-    if (!this.battleMgr.pendingActionUnit) return;
-    if (!unit.isAlive) return;
+  private onBattleUpdate() { this.updateUI(); }
 
-    this.battleMgr.playerAttack(unit.id);
-  }
-
-  /** 战斗状态更新 */
-  onBattleUpdate() {
-    this.updateUI();
-  }
-
-  /** 收到 action，刷新显示 */
-  onBattleAction(action: BattleAction) {
+  private onBattleAction(action: BattleAction) {
     this.flashUnit(action.unitId);
     if (action.targetId) {
       this.flashUnit(action.targetId);
-
-      // 伤害/治疗数字弹出
-      const targetData = this.unitNodes.get(action.targetId);
-      if (targetData) {
-        if (action.damage !== undefined) {
-          this.showDamageText(targetData.root, action.damage, action.isCrit);
-        } else if (action.healAmount !== undefined) {
-          this.showHealText(targetData.root, action.healAmount);
-        }
+      const td = this.unitNodes.get(action.targetId);
+      if (td) {
+        if (action.damage !== undefined) this.popText(td.root, action.damage, action.isCrit, false);
+        else if (action.healAmount !== undefined) this.popText(td.root, action.healAmount, false, true);
       }
     }
   }
 
-  private flashUnit(unitId: string) {
-    const data = this.unitNodes.get(unitId);
-    if (!data) return;
-    const original = data.iconLabel.color.clone();
-    Tween.stopAllByTarget(data.iconLabel);
-    tween(data.iconLabel)
-      .to(0.1, { color: Color.YELLOW })
-      .to(0.1, { color: original })
-      .start();
+  private flashUnit(id: string) {
+    const d = this.unitNodes.get(id); if (!d) return;
+    const orig = d.iconLabel.color.clone();
+    Tween.stopAllByTarget(d.iconLabel);
+    tween(d.iconLabel).to(0.1, { color: Color.YELLOW }).to(0.1, { color: orig }).start();
   }
 
-  private showDamageText(targetNode: Node, value: number, isCrit: boolean) {
-    const node = new Node('damageText');
-    const label = node.addComponent(Label);
-    label.string = isCrit ? `暴击! ${value}` : `-${value}`;
-    label.fontSize = isCrit ? 28 : 22;
-    label.color = isCrit ? Color.YELLOW : new Color(0xFF, 0x44, 0x44);
-    targetNode.addChild(node);
-    node.setPosition(0, 30);
-    tween(node)
-      .to(0.5, { position: new Vec3(0, 80, 0) }, { easing: 'quadOut' })
-      .call(() => node.destroy())
-      .start();
+  private popText(target: Node, value: number, isCrit: boolean, isHeal: boolean) {
+    const n = new Node('pop');
+    const l = n.addComponent(Label);
+    if (isHeal) { l.string = `+${value}`; l.fontSize = 22; l.color = C.healText; }
+    else if (isCrit) { l.string = `暴击! ${value}`; l.fontSize = 28; l.color = Color.YELLOW; }
+    else { l.string = `-${value}`; l.fontSize = 22; l.color = C.damageText; }
+    target.addChild(n);
+    n.setPosition(0, 30);
+    tween(n).to(0.6, { position: new Vec3(0, 90, 0) }).call(() => n.destroy()).start();
   }
 
-  private showHealText(targetNode: Node, value: number) {
-    const node = new Node('healText');
-    const label = node.addComponent(Label);
-    label.string = `+${value}`;
-    label.fontSize = 22;
-    label.color = new Color(144, 238, 144);
-    targetNode.addChild(node);
-    node.setPosition(0, 30);
-    tween(node)
-      .to(0.5, { position: new Vec3(0, 80, 0) }, { easing: 'quadOut' })
-      .call(() => node.destroy())
-      .start();
-  }
-
-  updateUI() {
-    // 更新所有单位的 HP
+  private updateUI() {
     for (const unit of this.battleMgr.allUnits) {
-      const data = this.unitNodes.get(unit.id);
-      if (!data) continue;
-
-      data.root.active = unit.isAlive;
-      data.hpLabel.string = unit.hpText;
-
-      // 更新 HP 条
+      const d = this.unitNodes.get(unit.id); if (!d) continue;
+      d.root.active = unit.isAlive;
+      d.hpLabel.string = unit.hpText;
       const pct = unit.hpPercent;
-      const fillWidth = Math.max(1, 90 * pct);
-      const hpColor = pct <= 0.3 ? COLORS.hpDanger
-        : pct <= 0.5 ? COLORS.hpAmber
-        : COLORS.hpGreen;
-
-      data.hpFill.clear();
-      data.hpFill.fillColor = hpColor;
-      data.hpFill.rect(-45, -3, fillWidth, 6);
-      data.hpFill.fill();
-
-      data.hpLabel.color = hpColor;
+      const fw = Math.max(1, 84 * pct);
+      const hc = pct <= 0.3 ? C.hpRed : pct <= 0.5 ? C.hpAmber : C.hpGreen;
+      d.hpFill.clear(); d.hpFill.fillColor = hc; d.hpFill.rect(-42, -3, fw, 5); d.hpFill.fill();
+      d.hpLabel.color = hc;
     }
 
-    // 轮数
-    if (this.roundLabel) {
-      this.roundLabel.string = `第 ${this.battleMgr.round} 轮`;
-      this.roundLabel.color = COLORS.hpAmber;
-      this.roundLabel.fontSize = 20;
+    this.roundLabel.string = `第 ${this.battleMgr.round} 轮`;
+
+    switch (this.battleMgr.phase) {
+      case 'player_turn':
+        this.statusLabel.fontSize = 20; this.statusLabel.color = C.playerText;
+        this.statusLabel.string = this.battleMgr.pendingActionUnit
+          ? `${this.battleMgr.pendingActionUnit.name} · 点击敌人攻击` : '战斗中...';
+        break;
+      case 'enemy_turn':
+        this.statusLabel.fontSize = 20; this.statusLabel.color = C.playerText;
+        this.statusLabel.string = '敌人行动中...';
+        break;
+      case 'victory':
+        this.statusLabel.fontSize = 42; this.statusLabel.color = C.victory;
+        this.statusLabel.string = '凯  旋';
+        break;
+      case 'defeat':
+        this.statusLabel.fontSize = 42; this.statusLabel.color = C.defeat;
+        this.statusLabel.string = '全军覆没';
+        break;
     }
 
-    // 状态
-    if (this.statusLabel) {
-      switch (this.battleMgr.phase) {
-        case 'player_turn':
-          this.statusLabel.fontSize = 20;
-          this.statusLabel.color = COLORS.playerText;
-          this.statusLabel.string = this.battleMgr.pendingActionUnit
-            ? `${this.battleMgr.pendingActionUnit.name} - 选目标`
-            : '战斗中...';
-          break;
-        case 'enemy_turn':
-          this.statusLabel.fontSize = 20;
-          this.statusLabel.color = COLORS.playerText;
-          this.statusLabel.string = '敌人行动中...';
-          break;
-        case 'victory':
-          this.statusLabel.fontSize = 36;
-          this.statusLabel.color = COLORS.hpAmber;
-          this.statusLabel.string = '凯旋';
-          break;
-        case 'defeat':
-          this.statusLabel.fontSize = 36;
-          this.statusLabel.color = new Color(0x8B, 0x00, 0x00);
-          this.statusLabel.string = '全军覆没';
-          break;
-        default:
-          this.statusLabel.string = '';
-      }
-    }
-
-    // 日志
-    if (this.logArea) {
-      const logLabel = this.logArea.getComponent(Label);
-      if (logLabel) {
-        const recent = this.battleMgr.log.slice(-10).join('\n');
-        logLabel.string = recent;
-      }
-    }
-
-    // 当前行动指示
+    this.logLabel.string = this.battleMgr.log.slice(-8).join('\n');
     this.updateTurnIndicator();
   }
 
   private updateTurnIndicator() {
-    // 清除旧指示
-    for (const [, data] of this.unitNodes) {
-      const old = data.root.getChildByName('turnIndicator');
-      if (old) {
-        old.removeFromParent();
-        old.destroy();
-      }
+    for (const [, d] of this.unitNodes) {
+      const old = d.root.getChildByName('indicator');
+      if (old) { old.removeFromParent(); old.destroy(); }
     }
-
-    const currentUnit = this.battleMgr.currentActingUnit;
-    if (!currentUnit) return;
-
-    const data = this.unitNodes.get(currentUnit.id);
-    if (!data || !data.root.active) return;
-
-    const indicator = new Node('turnIndicator');
-    const gfx = indicator.addComponent(Graphics);
-    gfx.fillColor = currentUnit.isPlayer ? COLORS.hpAmber : COLORS.enemyText;
-    gfx.rect(-40, -2, 80, 4);
-    gfx.fill();
-    indicator.setPosition(0, -50);
-    data.root.addChild(indicator);
-
-    tween(indicator)
-      .to(0.5, { scale: new Vec3(1.1, 1, 1) })
-      .to(0.5, { scale: Vec3.ONE })
-      .repeatForever()
-      .start();
+    const cu = this.battleMgr.currentActingUnit;
+    if (!cu) return;
+    const d = this.unitNodes.get(cu.id);
+    if (!d || !d.root.active) return;
+    const ind = new Node('indicator');
+    const g = ind.addComponent(Graphics);
+    g.fillColor = C.hpAmber;
+    g.rect(-35, -1, 70, 3); g.fill();
+    ind.setPosition(0, -48);
+    d.root.addChild(ind);
+    tween(ind).to(0.5, { scale: new Vec3(1.15, 1, 1) }).to(0.5, { scale: Vec3.ONE }).repeatForever().start();
   }
 }
