@@ -1,23 +1,9 @@
 {
+  /* Base configuration. Do not edit this field. */
+  "extends": "./temp/tsconfig.cocos.json",
+
+  /* Add your custom configuration here. */
   "compilerOptions": {
-    "target": "ES2015",
-    "module": "commonjs",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "outDir": "./build",
-    "baseUrl": ".",
-    "paths": {
-      "db://*": ["./*"]
-    }
-  },
-  "include": [
-    "assets/**/*"
-  ],
-  "exclude": [
-    "build",
-    "node_modules",
-    "library",
-    "temp"
-  ]
+    "strict": false
+  }
 }

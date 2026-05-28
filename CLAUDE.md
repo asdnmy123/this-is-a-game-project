@@ -70,6 +70,25 @@ This file provides guidance to Claude Code when working in this repository.
 agent 出方案（存文件）→ 评审 agent 读文件审查 → 修问题 → 定稿(approved)
 ```
 
+### 开发协作流程
+
+用户只负责 Cocos Creator 编辑器的最小操作，其余全部由 Claude 完成。
+
+**用户操作（每次 10-30 秒）：**
+1. 打开 Cocos Creator → Open Project 选 `client/`
+2. 在资源管理器双击 `Battle.scene` 打开场景
+3. 点 Play（▶）预览效果
+4. 反馈需要改的地方
+
+**Claude 负责：**
+- 所有 TypeScript 代码编写（战斗逻辑、配置、UI 组件等）
+- 项目配置文件（package.json、tsconfig.json、settings/）
+- Cocos Creator 场景文件的 JSON 编辑（仅必要时）
+- Git 提交管理
+- 后续 APK 打包配置
+
+**MCP 状态**：暂不安装 Cocos MCP 插件。如果后续编辑器操作成为瓶颈再考虑。
+
 ### 已创建的 agent（.claude/agents/）
 | agent | 职责 | 颜色 |
 |-------|------|------|
