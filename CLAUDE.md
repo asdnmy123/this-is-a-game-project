@@ -19,8 +19,8 @@ This file provides guidance to Claude Code when working in this repository.
 │   ├── combat/          战斗系统设计
 │   ├── system/          系统功能/UI 设计
 │   └── narrative/       世界观/剧情/文案
-├── src/                 源码（编码后创建）
-├── assets/              资源文件
+├── client/              Cocos Creator 项目（源码 + 场景 + 资源）
+├── assets/              原始资源文件（设计稿/参考图等）
 ├── task_plan.md         总体规划
 ├── findings.md          设计决策记录
 ├── progress.md          进度日志

@@ -147,6 +147,11 @@
 - [x] Phase 3 战斗系统设计全部完成（状态→complete）
 - [x] 战斗结算方案评审 + 修复 + 复审通过，标记 approved
 - [x] 同步更新回合流程文档（轮开始阶段顺序、狂暴拆分）
+- [x] 上线平台讨论：定 Android APK（模拟器测试）→ 后续微信小游戏
+- [x] 技术选型从微信小程序原生改为 Cocos Creator
+- [x] 规划调整：插入阶段 3.5 最小战斗原型（MVP），先出可玩的 APK
+- [x] 搭建 Cocos Creator 项目脚手架（client/）
+- [x] 编写战斗原型代码：Config/BattleUnit/DamageFormula/TurnOrder/BattleManager/BattleScene
 
 ### 测试结果
 | 测试 | 预期 | 实际 | 状态 |
