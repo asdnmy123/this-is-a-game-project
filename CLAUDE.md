@@ -17,7 +17,7 @@ This file provides guidance to Claude Code when working in this repository.
 ├── docs/                设计文档
 │   ├── combat/          战斗系统设计
 │   ├── system/          系统功能/UI 设计
-│   └── narrative/       世界观/剧情（预留）
+│   └── narrative/       世界观/剧情/文案
 ├── src/                 源码（编码后创建）
 ├── assets/              资源文件
 ├── task_plan.md         总体规划
@@ -43,6 +43,9 @@ This file provides guidance to Claude Code when working in this repository.
 | `docs/narrative/2026-05-28-story-outline.md` | 主线剧情框架（8章） |
 | `docs/combat/2026-05-28-hate-system-design.md` | 仇恨系统设计 |
 | `docs/system/2026-05-28-recruitment-design.md` | 角色招募系统设计 |
+| `docs/combat/2026-05-28-skill-system-design.md` | 技能系统设计 |
+| `docs/combat/2026-05-28-buff-debuff-system-design.md` | Buff/Debuff 机制设计 |
+| `docs/combat/2026-05-28-combat-settlement-design.md` | 战斗结算与胜负条件 |
 
 ### 已定设计
 - **游戏名**：《八方游侠》
@@ -52,7 +55,6 @@ This file provides guidance to Claude Code when working in this repository.
 - **角色**：有具体角色名（中国古风），固定星级（四/五星），招募获得
 
 ### 待定事项
-- 技能系统：各职业具体技能
 - 养成维度：等级、装备、技能升级等
 
 ### 已定技术选型
@@ -79,9 +81,7 @@ agent 出方案（存文件）→ 评审 agent 读文件审查 → 修问题 →
 
 ### 多路选择规则
 
-当需要用户做多路选择时，必须使用 `AskUserQuestion` 工具提供选项。格式要求：
-- **推荐选项放第一个**，并在 label 末尾标记 `(Recommended)`
-- 选项控制在 2-4 个，描述清晰简洁
+见 `.claude/rules/multi-choice.md`
 
 ### Agent 创建规则
 创建新 agent 必须先调用 agent-develop 技能获取规范参考，不得手动凭记忆创建。
