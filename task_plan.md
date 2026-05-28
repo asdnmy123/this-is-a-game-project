@@ -54,7 +54,8 @@
 - **状态：** complete
 
 ### 阶段 3.5：最小战斗原型（MVP）
-- [ ] Cocos Creator + Android 开发环境搭建
+- [ ] 新招 agent：cocos-dev（开发）、ui-designer（界面视觉）
+      依赖 → 无
       依赖 → 无
 - [ ] 新建 Cocos Creator 项目，跑通 APK 打包
       依赖 → 环境搭建

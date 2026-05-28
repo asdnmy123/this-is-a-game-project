@@ -79,6 +79,8 @@ agent 出方案（存文件）→ 评审 agent 读文件审查 → 修问题 →
 | game-design-reviewer | 方案评审/问题排查/对比分析 | yellow |
 | narrative-designer | 世界观/剧情/角色故事/命名/文案 | magenta |
 | producer | 项目流程/规范/进度/范围管控（制作人） | blue |
+| cocos-dev | Cocos Creator 编码/场景搭建/APK 打包 | cyan |
+| ui-designer | 界面布局/视觉风格/字符风格设计 | magenta |
 
 ### 多路选择规则
 
