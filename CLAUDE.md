@@ -13,7 +13,7 @@ This file provides guidance to Claude Code when working in this repository.
 ## 项目结构
 
 ```
-├── .claude/agents/      自定义 agent（战斗/数值/系统/评审）
+├── .claude/agents/      自定义 agent（战斗/数值/系统/评审/制作人）
 ├── docs/                设计文档
 │   ├── combat/          战斗系统设计
 │   ├── system/          系统功能/UI 设计
@@ -39,6 +39,10 @@ This file provides guidance to Claude Code when working in this repository.
 | `docs/combat/2026-05-28-damage-formula-design.md` | 伤害公式与职业数值 |
 | `docs/system/2026-05-28-main-interface-and-game-flow-design.md` | 主界面布局与游戏流程 |
 | `docs/narrative/2026-05-28-world-setting-and-game-name.md` | 世界观与游戏命名 |
+| `docs/combat/2026-05-28-class-design.md` | 四大职业详细设计 |
+| `docs/narrative/2026-05-28-story-outline.md` | 主线剧情框架（8章） |
+| `docs/combat/2026-05-28-hate-system-design.md` | 仇恨系统设计 |
+| `docs/system/2026-05-28-recruitment-design.md` | 角色招募系统设计 |
 
 ### 已定设计
 - **游戏名**：《八方游侠》
@@ -71,6 +75,13 @@ agent 出方案（存文件）→ 评审 agent 读文件审查 → 修问题 →
 | system-designer | UI/导航/编队/背包/存档/系统流程 | cyan |
 | game-design-reviewer | 方案评审/问题排查/对比分析 | yellow |
 | narrative-designer | 世界观/剧情/角色故事/命名/文案 | magenta |
+| producer | 项目流程/规范/进度/范围管控（制作人） | blue |
+
+### 多路选择规则
+
+当需要用户做多路选择时，必须使用 `AskUserQuestion` 工具提供选项。格式要求：
+- **推荐选项放第一个**，并在 label 末尾标记 `(Recommended)`
+- 选项控制在 2-4 个，描述清晰简洁
 
 ### Agent 创建规则
 创建新 agent 必须先调用 agent-develop 技能获取规范参考，不得手动凭记忆创建。
