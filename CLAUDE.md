@@ -7,6 +7,7 @@ This file provides guidance to Claude Code when working in this repository.
 微信小程序小游戏，回合制对战 + 角色养成的单机游戏。
 美术为极简字符风格，中式古风奇幻世界观（大晟王朝/江湖+方术）。
 练习项目，不以赚钱为首要目的。
+技术栈：Cocos Creator（iOS/Android APP，后续可导出微信小游戏）
 
 **当前状态**：设计阶段，尚未开始编码。
 
@@ -58,7 +59,7 @@ This file provides guidance to Claude Code when working in this repository.
 - 养成维度：等级、装备、技能升级等
 
 ### 已定技术选型
-- **前端框架**：微信小程序原生框架
+- **前端框架**：Cocos Creator（先 iOS/Android，后续可导出微信小游戏）
 - **版本管理**：git + GitHub（asdnmy123/this-is-a-game-project）
 - **项目跟踪**：planning-with-files 技能
 
