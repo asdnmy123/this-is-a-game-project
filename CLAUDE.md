@@ -7,9 +7,9 @@ This file provides guidance to Claude Code when working in this repository.
 微信小程序小游戏，回合制对战 + 角色养成的单机游戏。
 美术为极简字符风格，中式古风奇幻世界观（大晟王朝/江湖+方术）。
 练习项目，不以赚钱为首要目的。
-技术栈：Cocos Creator（Android 模拟器开发调试，后续可导出微信小游戏）
+技术栈：纯前端网页（HTML + CSS + JavaScript，无框架），后续可部署到 GitHub Pages 或微信小程序 WebView
 
-**当前状态**：设计阶段，尚未开始编码。
+**当前状态**：阶段 3.5 - 最小战斗原型开发中（已从 Cocos Creator 迁移到网页端，网页战斗原型已跑通）。
 
 ## 项目结构
 
@@ -74,18 +74,15 @@ agent 出方案（存文件）→ 评审 agent 读文件审查 → 修问题 →
 
 用户只负责 Cocos Creator 编辑器的最小操作，其余全部由 Claude 完成。
 
-**用户操作（每次 10-30 秒）：**
-1. 打开 Cocos Creator → Open Project 选 `client/`
-2. 在资源管理器双击 `Battle.scene` 打开场景
-3. 点 Play（▶）预览效果
-4. 反馈需要改的地方
+**用户操作：**
+1. 在浏览器中打开 `web-prototype/index.html` 预览效果
+2. 反馈需要改的地方
 
 **Claude 负责：**
-- 所有 TypeScript 代码编写（战斗逻辑、配置、UI 组件等）
-- 项目配置文件（package.json、tsconfig.json、settings/）
-- Cocos Creator 场景文件的 JSON 编辑（仅必要时）
+- 所有 HTML/CSS/JS 代码编写（战斗逻辑、UI 组件、交互等）
+- 项目配置文件维护
 - Git 提交管理
-- 后续 APK 打包配置
+- 后期部署配置（GitHub Pages 等）
 
 **MCP 状态**：暂不安装 Cocos MCP 插件。如果后续编辑器操作成为瓶颈再考虑。
 
@@ -98,7 +95,7 @@ agent 出方案（存文件）→ 评审 agent 读文件审查 → 修问题 →
 | game-design-reviewer | 方案评审/问题排查/对比分析 | yellow |
 | narrative-designer | 世界观/剧情/角色故事/命名/文案 | magenta |
 | producer | 项目流程/规范/进度/范围管控（制作人） | blue |
-| cocos-dev | Cocos Creator 编码/场景搭建/APK 打包 | cyan |
+| web-dev | 网页端开发/HTML+CSS+JS 实现 | blue |
 | ui-designer | 界面布局/视觉风格/字符风格设计 | magenta |
 
 ### 多路选择规则
@@ -145,3 +142,27 @@ agent 出方案（存文件）→ 评审 agent 读文件审查 → 修问题 →
 | 文档路径/结构变了 | `CLAUDE.md` | 项目结构说明 |
 
 **原则**：不需要每次 Read 文件都记 progress，但任何"产出性操作"（写文档、改设计、建文件、提交代码）之后都必须更新。
+
+## 文档排版规范
+
+本项目的 `docs/` 目录使用 Obsidian 管理，遵循以下排版规范：
+
+- **层次清晰**：标题层级不乱跳，内容一块一块的
+- **视觉呼吸**：段落之间、不同 section 之间用空行或分割线隔开
+- **不花哨**：不用多余 emoji，不搞花里胡哨的装饰
+
+标题规则：
+- 笔记顶部通常从 `##` 开始（`#` 留给 MOC/索引页）
+- 标题前后各空一行
+
+Callout 规则：
+- 类比/提示 → `> [!tip]`
+- 警告/易错 → `> [!warning]`
+- 总结 → `> [!summary]` 或 `> [!abstract]`
+- callout 后直接跟文字，不要空行
+
+列表规则：同一级用一致的标记（`-` 或 `*`），超过两层的嵌套列表考虑拆成子标题。
+
+代码/公式：行内公式 `$...$`，块级公式 `$$...$$`。代码块标注语言。
+
+链接：内部链接用 `[[wikilink]]`，别名用 `[[目标|显示名]]`，外部链接用 `[描述](url)`。

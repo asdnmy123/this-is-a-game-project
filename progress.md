@@ -166,6 +166,18 @@
 - [x] 发现 1 个 🔴 Error（Node.setContentSize 在 3.x 中不存在）、4 个 🟡 Warning、5 个 💡 Suggestion
 - [x] 架构上保持良好：BattleManager 与 BattleScene 的逻渲分离、纯逻辑类零 Cocos 依赖、Config 驱动配置
 
+### 本会话操作（2026-05-28）
+- [x] Cocos Creator 环境搭建大坑记录：
+  - 3D 模板下自定义脚本渲染全黑 → 必须用 Empty 2D 模板
+  - Node.setContentSize 在 3.x 不存在 → 改用 UITransform
+  - setTimeout 做动画报错 → 改用 tween()
+  - 同名敌人 ID 冲突 → 加全局 _unitIdCounter
+  - rm -rf 误删编辑器场景文件 → git restore 恢复
+  - Camera + Canvas 冲突 → 去掉 Camera，纯 2D 不需要
+- [x] 战斗原型最终跑通：玩家 3 人（玄甲/方士/惊鸿）vs 敌人 3 人（2 山贼 + 山贼头目）
+- [x] 古风配色：背景 #1A1410、玩家文字 #E8D5B7、敌人文字 #C84C4C、HP 绿 #6BAF6B
+- [x] 当前开发流程跑通：用户只按 Play，Claude 写全部代码
+
 ### 测试结果
 | 测试 | 预期 | 实际 | 状态 |
 |------|------|------|------|
@@ -173,3 +185,32 @@
 ### 错误
 | 错误 | 解决方案 |
 |------|---------|
+| Node.setContentSize 在 Cocos Creator 3.x 不存在 | 改用 UITransform 组件的 setContentSize |
+| setTimeout 做动画报"已销毁组件"错误 | 改用 tween() 系统，组件销毁时自动安全停止 |
+| 3D 模板下自定义脚本渲染全黑 | Empty 2D 模板才支持 2D UI 组件渲染 |
+| Cocos Creator 3.x 项目混入 2.x 字段（engine/pluginModules） | 删除，3.x package.json 只需 creator.version |
+| 两个同名敌人 ID 冲突（同 id→取不到第二个敌人节点） | 加全局 _unitIdCounter 生成唯一 id |
+| rm -rf 删掉了编辑器创建但未 git 记录的场景/设置文件 | git stash 或 git restore 文件，不要直接用 rm -rf |
+| Camera + Canvas 同时存在冲突 | 去掉 Camera，只保留 Canvas，2D UI 不需要 Camera |
+| 脚本报错但编译检查不报（await is only valid in async function） | 构造函数不能 async，去掉 await call |
+| 战斗结束 unit.isAlive 变 false 但 turn-order 引用死对象 | 加 alive 滤除：`u.isAlive ? u : ++idx continue` |
+| Cocos MCP 插件 $99.99 且更新陈旧 | 不安装，等编辑器操作成为瓶颈再考虑 |
+
+### 本会话操作（2026-05-28）
+- [x] 作为 cocos-dev 按照 battle-ui-design.md 改造 BattleScene.ts UI
+- [x] 新增元素：顶栏（轮次+敌人数）、面板标题、卡片背景+高亮边框+呼吸动画、出手顺序条、操作栏（两行6按钮）、多行日志面板、浮动数字增强（暴击/治疗/击杀）、结果横幅（凯旋/全军覆没）
+- [x] 删除旧元素：statusLabel、hintLabel、游戏标题"八方游侠"
+- [x] BattleUnit.ts 新增 level 属性
+- [x] 按钮状态管理：敌人行动时灰显+圆括号，玩家回合恢复
+- [x] 高亮边框呼吸动画：tween 0.4s 循环，当前行动角色边框琥珀色闪烁
+- [x] 浮动数字区分：伤害红、治疗绿、暴击金大字号、击杀标记+停留延迟
+
+### 本会话操作（2026-05-29）
+- [x] 全局规则整理：9 个 rules 文件 → 5 个（删除 read-before-write/ask-dont-assume/yagni/obsidian-format，合并进 CLAUDE.md）
+- [x] TDD 从"硬性规则"降级为"建议"
+- [x] agent-md-loading 规则加灵活执行说明（复杂任务必须，机械任务可跳过）
+- [x] 决定从 Cocos Creator 迁移到纯网页端开发（HTML + CSS + JS）
+- [x] 删除 cocos-dev agent，新建 web-dev agent
+- [x] 更新 CLAUDE.md：项目描述、工作流、agent 清单、当前状态
+- [x] 战斗逻辑从 TS 转 JS，输出到 `web-prototype/battle-core/`（验证通过）
+- [x] 创建网页战斗原型 `web-prototype/index.html`（古风 UI，双击可运行）

@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>八方游侠 · 战斗</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-main: #1a1817;
+  --bg-field: #1f1d1a;
+  --bg-card: #2a2621;
+  --bg-card-hover: #332e28;
+  --border-gold: #6b5b45;
+  --text-primary: #d4c5a9;
+  --text-secondary: #a0907a;
+  --text-dim: #706050;
+  --gold: #c9a96e;
+  --gold-glow: rgba(201,169,110,0.15);
+  --red: #c0392b;
+  --red-bright: #e84020;
+  --green: #40a060;
+  --green-bright: #50c070;
+  --hp-high: #4a8a5a;
+  --hp-mid: #b8a040;
+  --hp-low: #b84030;
+  --color-xuanjia: #5d8a7a;
+  --color-fangshi: #8a6a9a;
+  --color-jinghong: #b8864a;
+  --color-suwen: #5a9a7a;
+  --card-w: 200px;
+  --card-h: 160px;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  font-family: 'STSong', 'SimSun', 'Songti SC', 'KaiTi', serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 860px;
+  margin: 0 auto;
+  background: var(--bg-field);
+  border-left: 1px solid #2a2521;
+  border-right: 1px solid #2a2521;
+  box-shadow: 0 0 60px rgba(0,0,0,0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+#app::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(255,255,255,0.008) 2px, rgba(255,255,255,0.008) 4px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 顶部信息栏 */
+#top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 14px 20px;
+  background: linear-gradient(180deg, #221e1a 0%, #1f1d1a 100%);
+  border-bottom: 1px solid #2a2521;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+#top-bar .round-info {
+  font-size: 22px;
+  letter-spacing: 4px;
+  color: var(--gold);
+}
+
+#top-bar .phase-info {
+  font-size: 16px;
+  color: var(--text-secondary);
+  padding: 4px 16px;
+  border: 1px solid #3a352e;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.3);
+}
+
+#top-bar .phase-info.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 12px var(--gold-glow);
+}
+
+#top-bar .hint {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-left: auto;
+}
+
+#deco-line {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #3a352e, var(--border-gold), #3a352e, transparent);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* 战场区域 */
+#battle-field {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-around;
+  padding: 20px 16px;
+  gap: 24px;
+  position: relative;
+  z-index: 1;
+  min-height: 0;
+}
+
+.side-label {
+  position: absolute;
+  top: 8px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+
+.side-label.left { left: 28px; }
+.side-label.right { right: 28px; }
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  position: relative;
+}
+
+.column.ally { flex: 1; }
+.column.enemy { flex: 1; }
+
+.battle-divider {
+  width: 1px;
+  height: 70%;
+  background: linear-gradient(180deg, transparent, #3a352e, transparent);
+  flex-shrink: 0;
+}
+
+.side-banner {
+  font-size: 13px;
+  letter-spacing: 6px;
+  color: var(--text-dim);
+  opacity: 0.4;
+  writing-mode: vertical-rl;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.side-banner.left-banner { left: -8px; }
+.side-banner.right-banner { right: -8px; }
+
+/* 角色卡片 */
+.unit-card {
+  width: var(--card-w);
+  height: var(--card-h);
+  background: var(--bg-card);
+  border: 1px solid #4a3a2a;
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  cursor: default;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.unit-card.dead {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.unit-card .name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.unit-card .char-name {
+  font-size: 17px;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unit-card .class-tag {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 3px;
+  border: 1px solid;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+
+.class-tag.xuanjia { color: var(--color-xuanjia); border-color: var(--color-xuanjia); }
+.class-tag.fangshi { color: var(--color-fangshi); border-color: var(--color-fangshi); }
+.class-tag.jinghong { color: var(--color-jinghong); border-color: var(--color-jinghong); }
+.class-tag.suwen { color: var(--color-suwen); border-color: var(--color-suwen); }
+
+.unit-card .hp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.unit-card .hp-bar-wrap {
+  width: 100%;
+  height: 8px;
+  background: #1a1612;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #3a3028;
+}
+
+.unit-card .hp-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease, background 0.4s ease;
+  background: var(--hp-high);
+}
+
+.unit-card .hp-bar.low { background: var(--hp-low); }
+.unit-card .hp-bar.mid { background: var(--hp-mid); }
+
+.unit-card .hp-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 可点击目标 */
+.enemy .unit-card.selectable {
+  cursor: pointer;
+  border-color: var(--gold);
+  box-shadow: 0 0 16px var(--gold-glow), inset 0 0 16px rgba(201,169,110,0.05);
+  animation: cardPulse 1.5s ease-in-out infinite;
+}
+
+.enemy .unit-card.selectable:hover {
+  border-color: var(--red-bright);
+  box-shadow: 0 0 24px rgba(232,64,32,0.2), inset 0 0 20px rgba(232,64,32,0.08);
+  background: var(--bg-card-hover);
+}
+
+@keyframes cardPulse {
+  0%, 100% { box-shadow: 0 0 16px var(--gold-glow), inset 0 0 16px rgba(201,169,110,0.05); }
+  50% { box-shadow: 0 0 24px var(--gold-glow), inset 0 0 24px rgba(201,169,110,0.1); }
+}
+
+.ally .unit-card.acting {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px var(--gold-glow), inset 0 0 20px rgba(201,169,110,0.08);
+}
+
+.ally .unit-card.acting::after {
+  content: '\25B6 行动中';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 1px;
+  white-space: nowrap;
+  animation: textPulse 1s ease-in-out infinite;
+}
+
+@keyframes textPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.action-arrow {
+  position: absolute;
+  font-size: 24px;
+  color: var(--gold);
+  animation: arrowShoot 0.6s ease-out forwards;
+  pointer-events: none;
+  z-index: 50;
+}
+
+@keyframes arrowShoot {
+  0% { opacity: 1; transform: translateX(0) scale(1); }
+  100% { opacity: 0; transform: translateX(60px) scale(0.6); }
+}
+
+/* 浮动伤害数字 */
+.float-number {
+  position: absolute;
+  pointer-events: none;
+  z-index: 100;
+  font-weight: bold;
+  font-size: 30px;
+  color: var(--red-bright);
+  text-shadow: 0 0 8px rgba(232,64,32,0.5), 0 2px 4px rgba(0,0,0,0.8);
+  animation: floatUp 1.0s ease-out forwards;
+}
+
+.float-number.crit {
+  font-size: 44px;
+  color: #ff4020;
+  text-shadow: 0 0 16px rgba(255,64,32,0.7),
+               0 0 32px rgba(255,64,32,0.3),
+               0 2px 4px rgba(0,0,0,0.8);
+}
+
+.float-number.heal {
+  color: var(--green-bright);
+  text-shadow: 0 0 8px rgba(64,192,112,0.5), 0 2px 4px rgba(0,0,0,0.8);
+}
+
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  60% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-90px) scale(1.1); }
+}
+
+.flash-crit {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+  background: radial-gradient(circle at center, rgba(255,64,32,0.08) 0%, transparent 70%);
+  animation: critFlash 0.4s ease-out forwards;
+}
+
+@keyframes critFlash {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* 技能按钮栏 */
+#action-bar {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  background: #1a1817;
+  border-top: 1px solid #2a2521;
+  border-bottom: 1px solid #2a2521;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  position: relative;
+  z-index: 1;
+  flex-wrap: wrap;
+}
+
+.skill-btn {
+  padding: 8px 18px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 80px;
+}
+
+.skill-btn:hover:not(.on-cooldown) {
+  background: var(--bg-card-hover);
+  border-color: var(--gold);
+  box-shadow: 0 0 12px var(--gold-glow);
+}
+
+.skill-btn.on-cooldown {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: #3a352e;
+}
+
+.skill-btn.selected {
+  border-color: var(--gold);
+  background: rgba(201,169,110,0.12);
+  box-shadow: 0 0 16px var(--gold-glow), inset 0 0 16px rgba(201,169,110,0.05);
+}
+
+.skill-btn .skill-name {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.skill-btn .skill-cd {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* 友方可选目标 */
+.ally .unit-card.selectable {
+  cursor: pointer;
+  border-color: var(--green);
+  box-shadow: 0 0 16px rgba(64,160,96,0.15), inset 0 0 16px rgba(64,160,96,0.05);
+  animation: cardPulseGreen 1.5s ease-in-out infinite;
+}
+
+.ally .unit-card.selectable:hover {
+  border-color: var(--green-bright);
+  box-shadow: 0 0 24px rgba(64,192,112,0.2), inset 0 0 20px rgba(64,192,112,0.08);
+  background: var(--bg-card-hover);
+}
+
+@keyframes cardPulseGreen {
+  0%, 100% { box-shadow: 0 0 16px rgba(64,160,96,0.15), inset 0 0 16px rgba(64,160,96,0.05); }
+  50% { box-shadow: 0 0 24px rgba(64,160,96,0.25), inset 0 0 24px rgba(64,160,96,0.1); }
+}
+
+/* 浮动信息（如"施放成功"） */
+.float-info {
+  position: absolute;
+  pointer-events: none;
+  z-index: 100;
+  font-size: 24px;
+  color: var(--gold);
+  text-shadow: 0 0 12px var(--gold-glow), 0 2px 4px rgba(0,0,0,0.8);
+  animation: floatInfoUp 1.2s ease-out forwards;
+}
+
+@keyframes floatInfoUp {
+  0% { opacity: 1; transform: translateY(0) scale(0.8); }
+  40% { opacity: 1; transform: translateY(-20px) scale(1); }
+  100% { opacity: 0; transform: translateY(-80px) scale(1); }
+}
+
+/* 战斗日志 */
+#log-area {
+  flex-shrink: 0;
+  height: 150px;
+  background: #141210;
+  border-top: 1px solid #2a2521;
+  padding: 10px 16px;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+}
+
+#log-area::before {
+  content: '\2014  \6218 \62A5 \2014';
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 6px;
+  margin-bottom: 6px;
+  opacity: 0.5;
+}
+
+#log-area .log-entry {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  padding: 1px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+#log-area .log-entry:last-child { border-bottom: none; }
+#log-area .log-entry.crit { color: var(--red-bright); }
+#log-area .log-entry.heal { color: var(--green); }
+#log-area .log-entry.kill { color: var(--gold); font-weight: bold; }
+#log-area .log-entry.round { color: var(--gold); letter-spacing: 2px; }
+#log-area .log-entry.battle-start,
+#log-area .log-entry.battle-end { color: var(--gold); text-align: center; letter-spacing: 4px; font-size: 14px; }
+#log-area .log-entry.turn { color: var(--text-primary); }
+
+#log-area::-webkit-scrollbar { width: 4px; }
+#log-area::-webkit-scrollbar-track { background: transparent; }
+#log-area::-webkit-scrollbar-thumb { background: #3a352e; border-radius: 2px; }
+
+/* 结算画面 */
+#result-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+#result-overlay.show { display: flex; }
+
+#result-overlay .result-title {
+  font-size: 42px;
+  letter-spacing: 12px;
+  text-shadow: 0 0 40px rgba(201,169,110,0.3);
+}
+
+#result-overlay .result-title.victory { color: var(--gold); }
+#result-overlay .result-title.defeat { color: var(--red); }
+
+#result-overlay .result-sub {
+  font-size: 16px;
+  color: var(--text-secondary);
+  letter-spacing: 2px;
+}
+
+#result-overlay .btn-restart {
+  margin-top: 12px;
+  padding: 10px 40px;
+  font-size: 16px;
+  font-family: inherit;
+  color: var(--gold);
+  background: transparent;
+  border: 1px solid var(--border-gold);
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 4px;
+  transition: all 0.3s ease;
+}
+
+#result-overlay .btn-restart:hover {
+  background: rgba(201,169,110,0.1);
+  border-color: var(--gold);
+  box-shadow: 0 0 20px var(--gold-glow);
+}
+
+/* 响应式 */
+@media (max-width: 640px) {
+  :root { --card-w: 150px; --card-h: 140px; }
+  .unit-card .char-name { font-size: 14px; }
+  #top-bar .round-info { font-size: 18px; }
+  #log-area { height: 120px; }
+  .battle-divider { display: none; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top-bar">
+    <div class="round-info" id="roundDisplay">第 1 轮</div>
+    <div class="phase-info" id="phaseDisplay">战斗中</div>
+    <div class="hint" id="hintDisplay"></div>
+  </div>
+  <div id="deco-line"></div>
+
+  <div id="battle-field">
+    <span class="side-label left">&mdash; 我方 &mdash;</span>
+    <span class="side-label right">&mdash; 敌方 &mdash;</span>
+    <div class="column ally" id="allyColumn">
+      <span class="side-banner left-banner">侠</span>
+    </div>
+    <div class="battle-divider"></div>
+    <div class="column enemy" id="enemyColumn">
+      <span class="side-banner right-banner">寇</span>
+    </div>
+  </div>
+
+  <div id="action-bar"></div>
+
+  <div id="log-area"></div>
+
+  <div id="result-overlay">
+    <div class="result-title" id="resultTitle">胜利</div>
+    <div class="result-sub" id="resultSub">战斗结束</div>
+    <button class="btn-restart" onclick="restartBattle()">再 战 一 局</button>
+  </div>
+</div>
+
+<script src="./battle-core/config.js"></script>
+<script src="./battle-core/battle-unit.js"></script>
+<script src="./battle-core/damage-formula.js"></script>
+<script src="./battle-core/battle-manager.js"></script>
+<script>
+(function() {
+  'use strict';
+
+  var allyCol = document.getElementById('allyColumn');
+  var enemyCol = document.getElementById('enemyColumn');
+  var logArea = document.getElementById('log-area');
+  var roundDisplay = document.getElementById('roundDisplay');
+  var phaseDisplay = document.getElementById('phaseDisplay');
+  var hintDisplay = document.getElementById('hintDisplay');
+  var resultOverlay = document.getElementById('result-overlay');
+  var resultTitle = document.getElementById('resultTitle');
+  var resultSub = document.getElementById('resultSub');
+
+  var bm = null;
+  var isAnimating = false;
+  var uiState = 'idle'; // 'idle' | 'select_enemy' | 'select_ally'
+
+  function classLabel(c) {
+    var map = { xuanjia: '玄甲', fangshi: '方士', jinghong: '惊鸿', suwen: '素问' };
+    return map[c] || c;
+  }
+
+  function createCard(unit) {
+    var card = document.createElement('div');
+    card.className = 'unit-card';
+    card.dataset.unitId = unit.id;
+
+    var borderColors = {
+      xuanjia: 'var(--color-xuanjia)',
+      fangshi: 'var(--color-fangshi)',
+      jinghong: 'var(--color-jinghong)',
+      suwen: 'var(--color-suwen)'
+    };
+    card.style.borderLeft = '3px solid ' + (borderColors[unit.classType] || borderColors.xuanjia);
+
+    var nameRow = document.createElement('div');
+    nameRow.className = 'name-row';
+
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'char-name';
+    nameSpan.textContent = unit.name;
+
+    var tagSpan = document.createElement('span');
+    tagSpan.className = 'class-tag ' + unit.classType;
+    tagSpan.textContent = classLabel(unit.classType);
+
+    nameRow.appendChild(nameSpan);
+    nameRow.appendChild(tagSpan);
+
+    var hpSection = document.createElement('div');
+    hpSection.className = 'hp-section';
+
+    var hpBarWrap = document.createElement('div');
+    hpBarWrap.className = 'hp-bar-wrap';
+
+    var hpBar = document.createElement('div');
+    hpBar.className = 'hp-bar';
+    hpBar.id = 'hpbar_' + unit.id;
+
+    hpBarWrap.appendChild(hpBar);
+
+    var hpText = document.createElement('div');
+    hpText.className = 'hp-text';
+    hpText.id = 'hptxt_' + unit.id;
+
+    hpSection.appendChild(hpBarWrap);
+    hpSection.appendChild(hpText);
+
+    card.appendChild(nameRow);
+    card.appendChild(hpSection);
+
+    updateCard(card, unit);
+    return card;
+  }
+
+  function updateCard(card, unit) {
+    var hpBar = document.getElementById('hpbar_' + unit.id);
+    var hpText = document.getElementById('hptxt_' + unit.id);
+    if (!hpBar || !hpText) return;
+
+    var pct = unit.hpPercent * 100;
+    hpBar.style.width = pct + '%';
+    hpBar.className = 'hp-bar';
+    if (pct < 30) hpBar.classList.add('low');
+    else if (pct < 70) hpBar.classList.add('mid');
+    hpText.textContent = unit.hpText;
+
+    if (!unit.isAlive) card.classList.add('dead');
+    else card.classList.remove('dead');
+  }
+
+  function render() {
+    if (!bm) return;
+    roundDisplay.textContent = '第 ' + bm.round + ' 轮';
+
+    var phaseMap = {
+      round_start: '回合开始',
+      player_turn: '我方回合',
+      enemy_turn: '敌方回合',
+      round_end: '回合结束',
+      victory: '胜利',
+      defeat: '败北'
+    };
+    phaseDisplay.textContent = phaseMap[bm.phase] || bm.phase;
+
+    var isPlayerTurn = (bm.phase === 'player_turn' && bm.pendingActionUnit);
+    phaseDisplay.classList.toggle('active', isPlayerTurn);
+
+    if (bm.phase === 'victory') hintDisplay.textContent = '胜';
+    else if (bm.phase === 'defeat') hintDisplay.textContent = '负';
+    else if (isPlayerTurn) hintDisplay.textContent = '选择技能';
+    else if (bm.phase === 'enemy_turn') hintDisplay.textContent = '敌方行动中...';
+    else hintDisplay.textContent = '';
+
+    var allyCards = allyCol.querySelectorAll('.unit-card');
+    bm.players.forEach(function(p, i) { if (allyCards[i]) updateCard(allyCards[i], p); });
+
+    var enemyCards = enemyCol.querySelectorAll('.unit-card');
+    bm.enemies.forEach(function(e, i) { if (enemyCards[i]) updateCard(enemyCards[i], e); });
+
+    allyCards.forEach(function(c) { c.classList.remove('acting'); });
+    enemyCards.forEach(function(c) { c.classList.remove('acting'); });
+
+    if (bm.currentActingUnit && bm.currentActingUnit.isAlive) {
+      var actingCard = document.querySelector('.unit-card[data-unit-id="' + bm.currentActingUnit.id + '"]');
+      if (actingCard) actingCard.classList.add('acting');
+    }
+
+    // 只有目标选择状态时才由 UI 管理 selectable，idle 时不高亮任何目标
+    enemyCards.forEach(function(c) { c.classList.remove('selectable'); });
+    allyCards.forEach(function(c) { c.classList.remove('selectable'); });
+
+    renderSkills();
+
+    if (bm.phase === 'victory' || bm.phase === 'defeat') showResult(bm.phase === 'victory');
+    else resultOverlay.classList.remove('show');
+  }
+
+  function showFloatingNumber(targetId, text, isCrit, isHeal) {
+    var card = document.querySelector('.unit-card[data-unit-id="' + targetId + '"]');
+    if (!card) return;
+
+    var field = document.getElementById('battle-field');
+    var cardRect = card.getBoundingClientRect();
+    var fieldRect = field.getBoundingClientRect();
+
+    var el = document.createElement('div');
+    el.className = 'float-number';
+    if (isCrit) el.classList.add('crit');
+    if (isHeal) el.classList.add('heal');
+    el.textContent = text;
+    el.style.left = (cardRect.left - fieldRect.left + cardRect.width / 2 - 30) + 'px';
+    el.style.top = (cardRect.top - fieldRect.top + 20) + 'px';
+    field.appendChild(el);
+    setTimeout(function() { el.remove(); }, 1100);
+  }
+
+  function showCritFlash() {
+    var flash = document.createElement('div');
+    flash.className = 'flash-crit';
+    document.body.appendChild(flash);
+    setTimeout(function() { flash.remove(); }, 450);
+  }
+
+  function showActionArrow(fromId, toId) {
+    var fromCard = document.querySelector('.unit-card[data-unit-id="' + fromId + '"]');
+    var toCard = document.querySelector('.unit-card[data-unit-id="' + toId + '"]');
+    if (!fromCard || !toCard) return;
+
+    var field = document.getElementById('battle-field');
+    var fromRect = fromCard.getBoundingClientRect();
+    var toRect = toCard.getBoundingClientRect();
+    var fieldRect = field.getBoundingClientRect();
+
+    var arrow = document.createElement('div');
+    arrow.className = 'action-arrow';
+    arrow.textContent = '▶';
+    var startX = (fromRect.right < toRect.left)
+      ? fromRect.right - fieldRect.left
+      : fromRect.left - fieldRect.left;
+    var startY = (fromRect.top + fromRect.height / 2) - fieldRect.top;
+    arrow.style.left = startX + 'px';
+    arrow.style.top = startY + 'px';
+    field.appendChild(arrow);
+    setTimeout(function() { arrow.remove(); }, 650);
+  }
+
+  function appendLog(msg) {
+    var entry = document.createElement('div');
+    entry.className = 'log-entry';
+    if (msg.indexOf('暴击') !== -1) entry.classList.add('crit');
+    if (msg.indexOf('治疗') !== -1 || msg.indexOf('回复') !== -1) entry.classList.add('heal');
+    if (msg.indexOf('击杀') !== -1) entry.classList.add('kill');
+    if (msg.indexOf('第') !== -1 && msg.indexOf('轮') !== -1) entry.classList.add('round');
+    if (msg.indexOf('的回合') !== -1) entry.classList.add('turn');
+    if (msg.indexOf('战斗开始') !== -1) entry.classList.add('battle-start');
+    if (msg.indexOf('战斗胜利') !== -1 || msg.indexOf('战斗失败') !== -1) entry.classList.add('battle-end');
+    entry.textContent = msg;
+    logArea.appendChild(entry);
+    logArea.scrollTop = logArea.scrollHeight;
+  }
+
+  function syncLog() {
+    if (!bm) return;
+    var existingCount = logArea.querySelectorAll('.log-entry').length;
+    var logs = bm.log;
+    for (var i = existingCount; i < logs.length; i++) {
+      appendLog(logs[i]);
+    }
+  }
+
+  /** 渲染技能按钮栏 */
+  function renderSkills() {
+    var bar = document.getElementById('action-bar');
+    if (!bar) return;
+    if (!bm || !bm.pendingActionUnit || bm.phase !== 'player_turn') {
+      bar.innerHTML = '';
+      return;
+    }
+
+    var unit = bm.pendingActionUnit;
+    var skills = bm.getAvailableSkills(unit);
+
+    bar.innerHTML = '';
+
+    skills.forEach(function(s) {
+      var btn = document.createElement('button');
+      btn.className = 'skill-btn';
+      if (s.cooldown > 0) btn.classList.add('on-cooldown');
+      btn.dataset.skillKey = s.key;
+
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'skill-name';
+      nameSpan.textContent = s.name;
+
+      btn.appendChild(nameSpan);
+
+      if (s.cooldown > 0) {
+        var cdSpan = document.createElement('span');
+        cdSpan.className = 'skill-cd';
+        cdSpan.textContent = '冷却 ' + s.cooldown + ' 轮';
+        btn.appendChild(cdSpan);
+      }
+
+      // 当前选中的技能高亮
+      if (bm.pendingSkill === s.key && uiState !== 'idle') {
+        btn.classList.add('selected');
+      }
+
+      btn.addEventListener('click', function() {
+        if (isAnimating) return;
+        if (s.cooldown > 0) return;
+        onSkillSelect(s);
+      });
+
+      bar.appendChild(btn);
+    });
+  }
+
+  /** 选中技能后的处理 */
+  function onSkillSelect(skill) {
+    bm.pendingSkill = skill.key;
+
+    // 清除所有 selectable
+    document.querySelectorAll('.unit-card.selectable').forEach(function(c) {
+      c.classList.remove('selectable');
+    });
+
+    // 根据 targetType 决定下一步
+    switch (skill.targetType) {
+      case 'enemy_single':
+        uiState = 'select_enemy';
+        hintDisplay.textContent = '选择目标';
+        // 高亮所有存活敌人
+        bm.enemies.forEach(function(e) {
+          if (e.isAlive) {
+            var card = document.querySelector('.unit-card[data-unit-id="' + e.id + '"]');
+            if (card) card.classList.add('selectable');
+          }
+        });
+        renderSkills();
+        break;
+
+      case 'ally_single':
+        uiState = 'select_ally';
+        hintDisplay.textContent = '选择友方目标';
+        // 高亮所有存活友方
+        bm.players.forEach(function(p) {
+          if (p.isAlive) {
+            var card = document.querySelector('.unit-card[data-unit-id="' + p.id + '"]');
+            if (card) card.classList.add('selectable');
+          }
+        });
+        renderSkills();
+        break;
+
+      case 'all_enemy':
+      case 'all_ally':
+      case 'ally_lowest':
+      case 'self':
+        uiState = 'idle';
+        executeCurrentAction(null);
+        break;
+    }
+  }
+
+  /** 执行当前选中技能对目标的操作 */
+  function executeCurrentAction(targetId) {
+    isAnimating = true;
+    uiState = 'idle';
+    bm.executeAction(targetId);
+  }
+
+  /** 浮动文字（非伤害/治疗，如"施放成功"） */
+  function showFloatingInfo(unitId, text) {
+    var card = document.querySelector('.unit-card[data-unit-id="' + unitId + '"]');
+    if (!card) return;
+
+    var field = document.getElementById('battle-field');
+    var cardRect = card.getBoundingClientRect();
+    var fieldRect = field.getBoundingClientRect();
+
+    var el = document.createElement('div');
+    el.className = 'float-info';
+    el.textContent = text;
+    el.style.left = (cardRect.left - fieldRect.left + cardRect.width / 2 - 50) + 'px';
+    el.style.top = (cardRect.top - fieldRect.top + 30) + 'px';
+    field.appendChild(el);
+    setTimeout(function() { el.remove(); }, 1300);
+  }
+
+  function showResult(isVictory) {
+    resultOverlay.classList.add('show');
+    if (isVictory) {
+      resultTitle.textContent = '凯 旋';
+      resultTitle.className = 'result-title victory';
+      resultSub.textContent = '敌寇已平，大获全胜';
+    } else {
+      resultTitle.textContent = '败 北';
+      resultTitle.className = 'result-title defeat';
+      resultSub.textContent = '全军覆没，重整旗鼓';
+    }
+  }
+
+  window.restartBattle = function() {
+    resultOverlay.classList.remove('show');
+    initBattle();
+  };
+
+  enemyCol.addEventListener('click', function(e) {
+    if (isAnimating) return;
+    var card = e.target.closest('.unit-card.selectable');
+    if (!card) return;
+    var targetId = card.dataset.unitId;
+    if (uiState === 'select_enemy') {
+      executeCurrentAction(targetId);
+    }
+  });
+
+  allyCol.addEventListener('click', function(e) {
+    if (isAnimating) return;
+    var card = e.target.closest('.unit-card.selectable');
+    if (!card) return;
+    var targetId = card.dataset.unitId;
+    if (uiState === 'select_ally') {
+      executeCurrentAction(targetId);
+    }
+  });
+
+  function initBattle() {
+    allyCol.querySelectorAll('.unit-card').forEach(function(c) { c.remove(); });
+    enemyCol.querySelectorAll('.unit-card').forEach(function(c) { c.remove(); });
+    logArea.innerHTML = '';
+    isAnimating = false;
+    uiState = 'idle';
+
+    var players = [
+      new BattleUnit(CHARS.xuanjia, true, 0),
+      new BattleUnit(CHARS.fangshi, true, 1),
+      new BattleUnit(CHARS.suwen, true, 2)
+    ];
+    var enemies = [
+      new BattleUnit(ENEMIES.bandit, false, 0),
+      new BattleUnit(ENEMIES.bandit_leader, false, 1)
+    ];
+
+    players.forEach(function(p) { allyCol.appendChild(createCard(p)); });
+    enemies.forEach(function(e) { enemyCol.appendChild(createCard(e)); });
+
+    bm = new BattleManager(players, enemies);
+
+    bm.onAction = function(action) {
+      // 伤害数字
+      if (action.damage && action.damage > 0) {
+        showFloatingNumber(action.targetId, '-' + action.damage, action.isCrit, false);
+        if (action.isCrit) showCritFlash();
+      }
+      // 治疗数字
+      if (action.healAmount) {
+        showFloatingNumber(action.targetId, '+' + action.healAmount, false, true);
+      }
+      // 纯技能效果（铁壁嘲讽、鹰眼等）
+      if (action.actionType === 'skill' && action.damage === 0) {
+        showFloatingInfo(action.targetId, action.skillName);
+      }
+      // 箭头（AOE 时指向第一个目标也可以）
+      if (action.damage || action.healAmount) {
+        showActionArrow(action.unitId, action.targetId);
+      }
+      syncLog();
+      render();
+    };
+
+    bm.onUpdate = function() {
+      syncLog();
+      render();
+      isAnimating = false;
+      logArea.scrollTop = logArea.scrollHeight;
+    };
+
+    bm.start();
+    syncLog();
+    render();
+  }
+
+  document.addEventListener('DOMContentLoaded', initBattle);
+})();
+</script>
+</body>
+</html>

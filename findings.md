@@ -69,6 +69,18 @@
 |------|------|
 | task_plan.md 只管路线图，不写细节 | 计划赶不上变化，到任务时再讨论具体方案，避免过时细节变包袱 |
 
+## Cocos Creator 开发关键经验
+
+| 经验 | 说明 |
+|------|------|
+| **必须用 Empty 2D 模板** | 3D 模板的渲染管线不兼容 2D UI 组件，自定义脚本编译正常但画面全黑。Empty 2D 才走正确渲染路径 |
+| **Graphic 组件替代 Sprite** | 字符风格不需要贴图，用 `Graphics` + `rect()` + `fill()` 画背景/血条等纯色矩形，轻量且可控 |
+| **程序化建 UI，零编辑器依赖** | 所有 UI 节点在 `start()` 里用 `new Node()` + `addComponent()` 创建，不依赖场景编辑器的挂接，可复现可版本控制 |
+| **HTTPServer: setContentSize 在 UITransform 上** | Cocos Creator 3.x 中 Node 没有 `setContentSize`，需要在 `UITransform` 组件上调用 |
+| **Tween 代替 setTimeout 做动画反馈** | `tween(node).to(duration, props).call(fn).start()` 是安全的动画方式，组件销毁时自动停止，不会像 setTimeout 那样报错 |
+| **逻渲分离模式有效** | `BattleManager`（纯逻辑）+ `BattleScene`（渲染层）分离，BattleManager 零 Cocos 依赖，可单独测试或替换渲染层 |
+| **Cocos Creator 3.x 与 package.json** | 3.x 只认 `creator.version` 字段，`engine`/`pluginModules` 是 2.x 的，写上会出 warning；uuid 不要跨项目复制 |
+
 ## 资源
 - Claude Code agent-development 技能
 - Claude Code superpowers:subagent-driven-development 技能
@@ -149,3 +161,31 @@
 | DOT/HOT 最多 3 层（相同 ID 的） | 防止无限叠层导致伤害/治疗失控；同源不叠层（同 ID 刷新） |
 | DOT/HOT 不产生每轮仇恨 | 仇恨在施放技能那一刻已产生，持续效果不应重复产生仇恨 |
 | buff+debuff 对冲直接代数和，不分先后 | 简化计算，彼此抵消自然；无"谁优先级高"的问题 |
+
+## 技能系统设计决策（2026-05-29）
+
+| 决策 | 理由 |
+|------|------|
+| 技能按职业定义（同职业角色共享技能模板） | 先保证能快速做出可玩版本；以后有余力再改每个角色独立技能 |
+| 星级/角色差异只体现在属性数值上 | 机制不变只加数值，避免"没有某角色就缺某个机制" |
+
+## 预留待办
+- 以后可以考虑每个角色拥有独立技能（方案B），增强角色差异化和抽卡新鲜感
+
+## 平台与技术决策（2026-05-29）
+
+| 决策 | 理由 |
+|------|------|
+| 从 Cocos Creator 迁移到纯网页端（HTML + CSS + JS） | Cocos Creator 学习成本过高（从零学 IDE+引擎），反馈 loop 太长；回合制+字符风格天然适合网页；用户有 web 基础；Claude 有 frontend-design skill 可用 |
+| 保留 `client/` 目录不删 | 里面可能有以后用得上的参考（角色配置数值等），只占硬盘空间不影响网页开发 |
+| 删除 cocos-dev agent | Cocos Creator 相关开发不再进行 |
+| 新增 web-dev agent | 负责网页端 HTML/CSS/JS 实现 |
+
+## 规则整理（2026-05-29）
+
+| 决策 | 理由 |
+|------|------|
+| 9 个 rules 文件 → 5 个 | 过多规则稀释注意力，合并同类项后命中率更高 |
+| TDD 从"硬性规则"降级为"建议" | 当前阶段以"跑起来"优先，强行 TDD 打击积极性 |
+| agent-md-loading 区分复杂/机械任务 | 机械任务跳过 .md 加载可节省 token 和时间 |
+| 全局 CLAUDE.md 精简为"铁律 5 条 + 建议 2 条" | 精简后每条更容易被记住 |
