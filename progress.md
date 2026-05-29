@@ -214,3 +214,7 @@
 - [x] 更新 CLAUDE.md：项目描述、工作流、agent 清单、当前状态
 - [x] 战斗逻辑从 TS 转 JS，输出到 `web-prototype/battle-core/`（验证通过）
 - [x] 创建网页战斗原型 `web-prototype/index.html`（古风 UI，双击可运行）
+- [x] 完整技能数据填入 config.js（16 技能 × 4 职业）
+- [x] 技能系统实装（冷却管理、AOE、目标选择、技能按钮）
+- [x] 提交并推送 git：feat 从 Cocos Creator 迁移到网页端
+- [x] 创建 `docs/prompt-tips.md`：常用场景的 prompt 提醒卡片
